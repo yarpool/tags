@@ -1,14 +1,20 @@
 import pygame
 import sys
 from pygame.locals import *
+import random
 
+
+WINDOWWIDTH = 800  # Ширина экрана
+WINDOWHEIGHT = 600  # Высота экрана
 BOARDWIDTH = 4  # Кол-во рядов
 BOARDHEIGHT = 4  # Кол-во столбцов
 TILESIZE = 100  # Размер клетки
-WINDOWWIDTH = 800  # Ширина экрана
-WINDOWHEIGHT = 600  # Высота экрана
+BASICFONTSIZE = 30  # Размер шрифта
 FPS = 30  # Частота обновления
 BLANK = None  # Пусто пространство
+
+# Выбор сложности
+difficult = 30
 
 # Определение цветов объектов
 BGCOLOR = (0, 0, 0)
@@ -16,8 +22,6 @@ TILECOLOR = (0, 200, 100)
 TEXTCOLOR = (255, 255, 255)
 BORDERCOLOR = (0, 125, 125)
 MESSAGECOLOR = (255, 255, 255)
-
-BASICFONTSIZE = 30  # Размер шрифта
 
 XMARGIN = int((WINDOWWIDTH - (TILESIZE * BOARDWIDTH + (BOARDWIDTH - 1))) / 2)
 YMARGIN = int(
@@ -31,26 +35,45 @@ RIGHT = 'right'
 
 
 def main():
-    global FPSCLOCK, SCREEN, BASICFONT
+    global FPSCLOCK, SCREEN, BASICFONT, NEWGAME_BUTTON, NEWGAME_BUTTON_RECT,\
+        difficult
 
     # Основные настройки параметров экрана
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
     SCREEN = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
-    pygame.display.set_caption('Slide Puzzle')
+    pygame.display.set_caption('Пятнашки')
     BASICFONT = pygame.font.Font('freesansbold.ttf', BASICFONTSIZE)
+    NEWGAME_BUTTON, NEWGAME_BUTTON_RECT = makeText('Новая игра', TEXTCOLOR,
+                                                   TILECOLOR,
+                                                   WINDOWWIDTH - 200,
+                                                   WINDOWHEIGHT - 60)
+    decision = getStartingBoard()
+    mainBoard = generateNewPuzzle(difficult)
 
-    mainBoard = getStartingBoard()
+    makemove = True
 
     while True:  # основной игровой цикл
         slideTo = None
         msg = 'Нажмите на плитку что бы переместить её.'
+        if mainBoard == decision:
+            msg = 'Решено!'
+            makemove = False
+            difficult += 30
 
         drawBoard(mainBoard, msg)
-
         checkForQuit()
         for event in pygame.event.get():  # цикл обработки событий
             if event.type == MOUSEBUTTONUP:
+                spotx, spoty = getSpotClicked(
+                    mainBoard, event.pos[0], event.pos[1])
+                if (spotx, spoty) == (None, None):
+                    if NEWGAME_BUTTON_RECT.collidepoint(event.pos):
+                        mainBoard = generateNewPuzzle(
+                            difficult)  # Проверка нажатия по кнопке "Новая игра"
+                        makemove = True
+
+            if event.type == MOUSEBUTTONUP and makemove:
                 spotx, spoty = getSpotClicked(
                     mainBoard, event.pos[0], event.pos[1])
                 blankx, blanky = getBlankPosition(mainBoard)
@@ -175,6 +198,7 @@ def makeText(text, color, bgcolor, top, left):
 
 def drawBoard(board, message):
     """Функция рисования игровой доски"""
+    global NEWGAME_BUTTON, NEWGAME_BUTTON_RECT
     SCREEN.fill(BGCOLOR)
     if message:
         textSurf, textRect = makeText(message, MESSAGECOLOR, BGCOLOR, 5, 5)
@@ -190,6 +214,7 @@ def drawBoard(board, message):
     height = BOARDHEIGHT * TILESIZE
     pygame.draw.rect(SCREEN, BORDERCOLOR, (left - 4, top - 4,
                                            width + 11, height + 11), 4)
+    SCREEN.blit(NEWGAME_BUTTON, NEWGAME_BUTTON_RECT)
 
 
 def slideAnimation(board, direction, message, animationSpeed):
@@ -232,6 +257,37 @@ def slideAnimation(board, direction, message, animationSpeed):
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
+
+
+def getRandomMove(board, lastMove=None):
+    """Функция выполнения случайных ходов"""
+    validMoves = [UP, DOWN, LEFT, RIGHT]
+
+    # фильтрация ходов ходов из списка
+    if lastMove == UP or not isValidMove(board, DOWN):
+        validMoves.remove(DOWN)
+    if lastMove == DOWN or not isValidMove(board, UP):
+        validMoves.remove(UP)
+    if lastMove == LEFT or not isValidMove(board, RIGHT):
+        validMoves.remove(RIGHT)
+    if lastMove == RIGHT or not isValidMove(board, LEFT):
+        validMoves.remove(LEFT)
+
+    # возврат случайного хода из списка оставшихся ходов
+    return random.choice(validMoves)
+
+
+def generateNewPuzzle(numSlides):
+    """Генерирование нового пазла"""
+    board = getStartingBoard()
+    drawBoard(board, '')
+    pygame.display.update()
+    lastMove = None
+    for i in range(numSlides):
+        move = getRandomMove(board, lastMove)
+        makeMove(board, move)
+        lastMove = move
+    return (board)
 
 
 if __name__ == '__main__':
