@@ -1,6 +1,5 @@
 import pygame
 import sys
-import random
 from pygame.locals import *
 
 BOARDWIDTH = 4  # Кол-во рядов
@@ -189,8 +188,8 @@ def drawBoard(board, message):
     left, top = getLeftTopOfTile(0, 0)
     width = BOARDWIDTH * TILESIZE
     height = BOARDHEIGHT * TILESIZE
-    pygame.draw.rect(SCREEN, BORDERCOLOR, (left,
-                                           top, width, height), 4)
+    pygame.draw.rect(SCREEN, BORDERCOLOR, (left - 4, top - 4,
+                                           width + 11, height + 11), 4)
 
 
 def slideAnimation(board, direction, message, animationSpeed):
