@@ -53,13 +53,19 @@ def main():
 
     makemove = True
 
+    clicksound = pygame.mixer.Sound('music\\click.wav')
+    winsound = pygame.mixer.Sound('music\\win.wav')
+    soundflag = True
     while True:  # основной игровой цикл
         slideTo = None
         msg = 'Нажмите на плитку что бы переместить её.'
         if mainBoard == decision:
             msg = 'Решено!'
             makemove = False
-            difficult += 30
+            difficult += 30  # Увеличение сложности
+            if soundflag:
+                winsound.play()
+            soundflag = False
 
         drawBoard(mainBoard, msg)
         checkForQuit()
@@ -72,6 +78,7 @@ def main():
                         mainBoard = generateNewPuzzle(
                             difficult)  # Проверка нажатия по кнопке "Новая игра"
                         makemove = True
+                        soundflag = True
 
             if event.type == MOUSEBUTTONUP and makemove:
                 spotx, spoty = getSpotClicked(
@@ -79,12 +86,16 @@ def main():
                 blankx, blanky = getBlankPosition(mainBoard)
                 if spotx == blankx + 1 and spoty == blanky:
                     slideTo = LEFT
+                    clicksound.play()
                 elif spotx == blankx - 1 and spoty == blanky:
                     slideTo = RIGHT
+                    clicksound.play()
                 elif spotx == blankx and spoty == blanky + 1:
                     slideTo = UP
+                    clicksound.play()
                 elif spotx == blankx and spoty == blanky - 1:
                     slideTo = DOWN
+                    clicksound.play()
 
         if slideTo:
             # Анимация пкередвижения плитки
